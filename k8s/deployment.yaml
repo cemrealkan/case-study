@@ -13,10 +13,12 @@ spec:
       labels:
         app: linkding
     spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
       containers:
         - name: linkding
-          image: cemrea/linkding:0.0.1
-          imagePullPolicy: IfNotPresent
+          image: cemrea/linkding:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 9090
           envFrom:

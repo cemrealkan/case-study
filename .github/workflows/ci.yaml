@@ -1,0 +1,33 @@
+name: Mini CI/CD - Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Docker login
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t cemrea/linkding:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push cemrea/linkding:latest
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl config use-context minikube
+          kubectl rollout restart deployment/linkding -n linkding
+          kubectl rollout status deployment/linkding -n linkding
