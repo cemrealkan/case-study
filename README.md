@@ -48,6 +48,33 @@ kubectl get configmap -n linkding
 ```
 ### Secret
 
+Uygulama ve Docker image pull işlemleri için iki farklı Kubernetes Secret kullanılmıştır:
+
+- Docker Hub erişimi için imagePullSecret
+- Uygulama konfigürasyonuna ait hassas bilgiler için application secret
+
+#### Docker Hub Secret (imagePullSecret)
+Linkding uygulamasının Docker Hub üzerinde private olarak tutulan image’ı
+çekebilmesi için docker-registry tipinde bir Kubernetes Secret oluşturulmuştur.
+
+Secret aşağıdaki komut ile oluşturulmuştur:
+
+```bash
+kubectl create secret docker-registry dockerhub-secret \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-username=<DOCKERHUB_USERNAME> \
+  --docker-password=<DOCKERHUB_TOKEN> \
+  --docker-email=<EMAIL> \
+  -n linkding
+```
+
+#### Uygulama Secret (linkding-secret)
+Uygulamaya ait hassas bilgiler (örneğin secret key, admin bilgileri vb.)
+Kubernetes Secret objesi içerisinde tutulmaktadır.
+
+```bash
+kubectl apply -f k8s/secret.yaml
+```
 
 ### Deployment
 
@@ -147,10 +174,83 @@ Script aşağıdaki işlemleri otomatik olarak gerçekleştirir:
 ```
 
 
-## Optional CI/CD
+## Optional CI/CD (GitHub Actions)
+
+Bu case kapsamında opsiyonel bir mini CI/CD süreci
+GitHub Actions kullanılarak oluşturulmuştur.
+
+Amaç; source code üzerinde yapılan bir değişikliğin ardından:
+
+- Docker image build edilmesi
+- Docker Hub registry’ye push edilmesi
+- Kubernetes ortamına otomatik deploy edilmesi
+
+adımlarının uçtan uca otomatik olarak gerçekleştirilmesini sağlamaktır.
+
+### CI/CD Akışı
+
+Pipeline aşağıdaki adımlardan oluşmaktadır:
+
+1. GitHub repository üzerinde `main` branch’e yapılan push işlemi ile pipeline tetiklenir
+2. GitHub Actions runner üzerinde Docker Hub’a login olunur
+3. Uygulama için Docker image build edilir
+4. Oluşturulan image Docker Hub registry’ye push edilir
+5. Kubernetes deployment rollout restart edilerek yeni image otomatik olarak yayına alınır
+
+![Docker Hub Image](screenshots/dockerhub-image.PNG)
+
+![GitHub Actions Pipeline Success](screenshots/github-actions-success.png)
+
+![GitHub Actions CI/CD Job Success](screenshots/github-cicd-success.PNG)
+
+![Kubernetes Pods After CI/CD](screenshots/kubectl-get-pods-after-ci.PNG)
+
+![Linkding UI After CI/CD](screenshots/linkding-ui-after-ci.PNG)
 
 
+### GitHub Actions Runner Yapısı
 
+Bu case kapsamında Kubernetes cluster’a erişim sağlanabilmesi ve
+`kubectl` komutlarının çalıştırılabilmesi için
+**self-hosted GitHub Actions runner** kullanılmıştır.
+
+Runner, local ortamda çalışacak şekilde yapılandırılmış ve
+GitHub repository ile başarıyla ilişkilendirilmiştir.
+
+### GitHub Actions – Docker Hub Entegrasyonu
+
+Docker Hub erişimi için GitHub Actions repository secrets kullanılmıştır:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+Bu sayede Docker Hub kimlik bilgileri pipeline içerisinde
+güvenli bir şekilde yönetilmiştir.
+
+### Kubernetes Deploy
+
+Pipeline’ın son adımında aşağıdaki komutlar çalıştırılarak
+Kubernetes deployment otomatik olarak güncellenmiştir:
+
+```bash
+kubectl rollout restart deployment/linkding -n linkding
+kubectl rollout status deployment/linkding -n linkding
+```
+
+#### Notlar
+
+Not!:
+Bu case kapsamında CI/CD pipeline basit tutulmuş olup,
+main branch’e yapılan push’lar sonrasında otomatik deploy gerçekleştirilmektedir.
+Gerçek production senaryolarında feature branch, pull request
+ve approval mekanizmaları tercih edilebilir.
+
+Not!!:
+Case’in ilk aşamalarında Linkding uygulaması Docker Hub üzerinde
+hazır bulunan resmi image kullanılarak deploy edilmiştir.
+CI/CD sürecinin eklenmesiyle birlikte deployment manifesti güncellenmiş
+ve uygulama, bu repository içerisinde yer alan Dockerfile kullanılarak
+build edilen custom Docker image üzerinden çalıştırılmaya başlanmıştır.
 
 
 
