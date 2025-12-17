@@ -239,18 +239,28 @@ kubectl rollout status deployment/linkding -n linkding
 
 #### Notlar
 
-Not!:
-Bu case kapsamında CI/CD pipeline basit tutulmuş olup,
-main branch’e yapılan push’lar sonrasında otomatik deploy gerçekleştirilmektedir.
-Gerçek production senaryolarında feature branch, pull request
-ve approval mekanizmaları tercih edilebilir.
+**Not 1:**  
+Bu case kapsamında CI/CD pipeline bilinçli olarak basit tutulmuştur.
+`main` branch’e yapılan push’lar sonrasında otomatik deploy
+gerçekleştirilmektedir.
+Gerçek production senaryolarında feature branch yapısı,
+pull request süreçleri ve approval mekanizmaları tercih edilebilir.
 
-Not!!:
+**Not 2:**  
 Case’in ilk aşamalarında Linkding uygulaması Docker Hub üzerinde
 hazır bulunan resmi image kullanılarak deploy edilmiştir.
 CI/CD sürecinin eklenmesiyle birlikte deployment manifesti güncellenmiş
 ve uygulama, bu repository içerisinde yer alan Dockerfile kullanılarak
 build edilen custom Docker image üzerinden çalıştırılmaya başlanmıştır.
+
+#### Güvenlik Hususları
+
+- Repository içerisine herhangi bir kullanıcı bilgisi, token veya secret **eklenmemiştir**.
+- Tüm ekran görüntüleri **lokal bir Kubernetes ortamında (Minikube)** alınmıştır.
+- Docker registry erişim bilgileri **GitHub Actions Secrets** kullanılarak
+  pipeline içerisinde güvenli bir şekilde saklanmaktadır.
+- CI/CD süreci yalnızca demonstrasyon amaçlıdır ve production ortamı temsil etmemektedir.
+
 
 
 
